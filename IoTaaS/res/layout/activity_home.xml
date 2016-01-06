@@ -57,7 +57,7 @@
                     android:id="@+id/editTextreuest"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:ems="10" />
+                    android:ems="10" android:inputType="text"/>
 
                 <TextView
                     android:id="@+id/data"
