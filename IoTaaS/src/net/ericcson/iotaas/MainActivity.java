@@ -126,8 +126,6 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 			// Show a progress spinner, and kick off a background task to
 			// perform the user login attempt.
 			showProgress(true);
-			
-			//GOGOGGOGOGGOGO
 			new GoLogin().execute("");
 			startActivity(new Intent(MainActivity.this, HomeActivity.class));
 
