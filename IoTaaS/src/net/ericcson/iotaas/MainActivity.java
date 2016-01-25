@@ -1,7 +1,13 @@
 package net.ericcson.iotaas;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.json.JSONObject;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -25,11 +31,13 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
@@ -40,8 +48,10 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 	private EditText mPasswordView;
 	private View mProgressView;
 	private View mLoginFormView;
-	private String email;
+	private String username;
 	private String password;
+	private String tokenId;
+	private String successUrl;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -66,10 +76,12 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 			}
 		});
 
-		Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+		final Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
 		mEmailSignInButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View view) {
+				InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE); 
+				inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),InputMethodManager.HIDE_NOT_ALWAYS);
 				attemptLogin();
 			}
 		});
@@ -94,7 +106,7 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 		mPasswordView.setError(null);
 
 		// Store values at the time of the login attempt.
-		email = mEmailView.getText().toString();
+		username = mEmailView.getText().toString();
 		password = mPasswordView.getText().toString();
 
 		boolean cancel = false;
@@ -108,12 +120,8 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 		}
 
 		// Check for a valid email address.
-		if (TextUtils.isEmpty(email)) {
+		if (TextUtils.isEmpty(username)) {
 			mEmailView.setError(getString(R.string.error_field_required));
-			focusView = mEmailView;
-			cancel = true;
-		} else if (!isEmailValid(email)) {
-			mEmailView.setError(getString(R.string.error_invalid_email));
 			focusView = mEmailView;
 			cancel = true;
 		}
@@ -125,9 +133,9 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 		} else {
 			// Show a progress spinner, and kick off a background task to
 			// perform the user login attempt.
+
 			showProgress(true);
 			new GoLogin().execute("");
-			startActivity(new Intent(MainActivity.this, HomeActivity.class));
 
 		}
 	}
@@ -138,6 +146,7 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 	public class GoLogin extends AsyncTask<String, String, String>
 	{
 
+		boolean isOK=false;
 		@Override
 		protected void onPreExecute() {
 			showProgress(true);
@@ -148,7 +157,39 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 		protected String doInBackground(String... params) {
 			if(isNetworkConnected())
 			{
-				
+				try {
+					String url="http://mel-ics.ericsson.net:38080/rest/json/authenticate";
+					URL object=new URL(url);
+					HttpURLConnection con = (HttpURLConnection) object.openConnection();
+
+					con.setDoOutput(true);
+					con.setDoInput(true);
+					con.setInstanceFollowRedirects(false);
+					con.setRequestMethod("POST");
+					con.setRequestProperty("Content-Type", "application/json");
+					con.setRequestProperty("X-OpenAM-Username", username);
+					con.setRequestProperty("X-OpenAM-Password", password);
+					con.setRequestProperty("ECE-Suppress-AA", "true");
+
+
+					StringBuffer sb = new StringBuffer();
+					BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(),"utf-8"));  
+					String line = null;  
+					while ((line = br.readLine()) != null) {  
+						sb.append(line + "\n");  
+					}  
+					br.close();
+
+					JSONObject responseObject=new JSONObject(sb.toString());
+					tokenId=responseObject.get("tokenId").toString();
+					successUrl=responseObject.get("successUrl").toString();
+					isOK=true;
+					startActivity(new Intent(MainActivity.this, HomeActivity.class));
+				} 
+				catch (Exception e) 
+				{
+					e.getMessage();
+				}
 			}
 			return "";
 		}
@@ -156,11 +197,10 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 		protected void onPostExecute(String result) {
 			super.onPostExecute(result);
 			showProgress(false);
+			if(!isOK)
+				Toast.makeText(MainActivity.this,"Wrong Credentails", Toast.LENGTH_SHORT).show();
 			this.cancel(true);
 		}
-	}
-	private boolean isEmailValid(String email) {
-		return email.contains("@");
 	}
 
 	private boolean isPasswordValid(String password) {

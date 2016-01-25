@@ -2,11 +2,10 @@
 <resources>
 
     <string name="app_name">IoTaaS</string>
-    <string name="error_invalid_email">email address is invalid</string>
+    <string name="error_invalid_username">username is invalid</string>
     <string name="error_invalid_password">password is too short</string>
     <string name="error_incorrect_password">error</string>
     <string name="error_field_required">field is required</string>
-    <string name="title_activity_home">HomeActivity</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="title_activity_home">Home</string>
 
 </resources>
