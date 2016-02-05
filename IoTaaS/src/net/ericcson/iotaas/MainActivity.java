@@ -171,7 +171,6 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 					con.setRequestProperty("X-OpenAM-Password", password);
 					con.setRequestProperty("ECE-Suppress-AA", "true");
 
-
 					StringBuffer sb = new StringBuffer();
 					BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(),"utf-8"));  
 					String line = null;  
